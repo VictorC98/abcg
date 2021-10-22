@@ -23,11 +23,11 @@ void Car::initializeGL(GLuint program, int quantity) {
   for (auto &vehicle : m_car) {
     vehicle = createVehicle();
 
-    // Make sure the vehicle won't collide with the ship
+    // Make sure the vehicle won't collide with the frog
     do {
       vehicle.m_translation = {m_randomDist(m_randomEngine),
                                 m_randomDist(m_randomEngine)};
-    } while (glm::length(vehicle.m_translation) < 0.5f);
+    } while (glm::length(vehicle.m_translation) < 0.8);
   }
 }
 
@@ -63,18 +63,19 @@ void Car::terminateGL() {
   }
 }
 
-void Car::update(float deltaTime){
+void Car::update(const Frog &frog, float deltaTime) {
   for (auto &vehicle : m_car) {
+    vehicle.m_translation -= frog.m_velocity * deltaTime;
+    vehicle.m_rotation = glm::wrapAngle(
+        vehicle.m_rotation + vehicle.m_angularVelocity * deltaTime);
     vehicle.m_translation += vehicle.m_velocity * deltaTime;
-
     // Wrap-around
     if (vehicle.m_translation.x < -1.0f) vehicle.m_translation.x += 2.0f;
     if (vehicle.m_translation.x > +1.0f) vehicle.m_translation.x -= 2.0f;
   }
 }
 
-Car::Vehicle Car::createVehicle(glm::vec2 translation,
-                                              float scale) {
+Car::Vehicle Car::createVehicle(glm::vec2 translation, float scale) {
   Vehicle vehicle;
 
   auto &re{m_randomEngine};  // Shortcut
@@ -91,24 +92,28 @@ Car::Vehicle Car::createVehicle(glm::vec2 translation,
   vehicle.m_rotation = 0.0f;
   vehicle.m_scale = scale;
   vehicle.m_translation = translation;
-
-  // Choose a random angular velocity
   vehicle.m_angularVelocity = 0.0f;
 
   // Choose a random direction
-  glm::vec2 direction{1.0f, 0.0f};
-  vehicle.m_velocity = glm::normalize(direction) / 2.0f;
+  float d = rand() % 2;
+  if (d == 0){
+    d = -1.0;
+  }
+
+  glm::vec2 direction{d, 0.0f};
+  vehicle.m_velocity = glm::normalize(direction) / 5.0f;
 
   // Create geometry
-  std::vector<glm::vec2> positions(0);
-  positions.emplace_back(0, 0);
-  const auto step{M_PI * 2 / vehicle.m_polygonSides};
-  std::uniform_real_distribution<float> randomRadius(0.8f, 1.0f);
-  for (const auto angle : iter::range(0.0, M_PI * 2, step)) {
-    const auto radius{randomRadius(re)};
-    positions.emplace_back(radius * std::cos(angle), radius * std::sin(angle));
+  std::array<glm::vec2, 4> positions{
+      glm::vec2{-08.0f, +08.0f}, glm::vec2{-08.0f, -08.0f},
+      glm::vec2{+12.0f, -08.0f}, glm::vec2{+12.0f, +08.0f},
+      };
+
+  // Normalize
+  for (auto &position : positions) {
+    position /= glm::vec2{18.0f, 18.0f};
   }
-  positions.push_back(positions.at(1));
+
 
   // Generate VBO
   abcg::glGenBuffers(1, &vehicle.m_vbo);

@@ -16,7 +16,7 @@ class Car {
   void paintGL();
   void terminateGL();
 
-  void update(float deltaTime);
+  void update(const Frog &frog, float deltaTime);
 
  private:
   friend OpenGLWindow;
