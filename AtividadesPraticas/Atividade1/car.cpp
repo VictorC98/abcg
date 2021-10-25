@@ -27,7 +27,7 @@ void Car::initializeGL(GLuint program, int quantity) {
     do {
       vehicle.m_translation = {m_randomDist(m_randomEngine),
                                 m_randomDist(m_randomEngine)};
-    } while (glm::length(vehicle.m_translation) < 0.8);
+    } while (glm::length(vehicle.m_translation) < 0.5);
   }
 }
 
@@ -37,7 +37,7 @@ void Car::paintGL() {
   for (const auto &vehicle : m_car) {
     abcg::glBindVertexArray(vehicle.m_vao);
 
-    abcg::glUniform4fv(m_colorLoc, 1, &vehicle.m_color.r);
+    abcg::glUniform4fv(m_colorLoc, 1, &vehicle.m_color.a);
     abcg::glUniform1f(m_scaleLoc, vehicle.m_scale);
     abcg::glUniform1f(m_rotationLoc, vehicle.m_rotation);
 
@@ -66,8 +66,6 @@ void Car::terminateGL() {
 void Car::update(const Frog &frog, float deltaTime) {
   for (auto &vehicle : m_car) {
     vehicle.m_translation -= frog.m_velocity * deltaTime;
-    vehicle.m_rotation = glm::wrapAngle(
-        vehicle.m_rotation + vehicle.m_angularVelocity * deltaTime);
     vehicle.m_translation += vehicle.m_velocity * deltaTime;
     // Wrap-around
     if (vehicle.m_translation.x < -1.0f) vehicle.m_translation.x += 2.0f;
@@ -78,15 +76,7 @@ void Car::update(const Frog &frog, float deltaTime) {
 Car::Vehicle Car::createVehicle(glm::vec2 translation, float scale) {
   Vehicle vehicle;
 
-  auto &re{m_randomEngine};  // Shortcut
-
-  // Randomly choose the number of sides
-  std::uniform_int_distribution<int> randomSides(6, 20);
-  vehicle.m_polygonSides = randomSides(re);
-
-  // Choose a random color (actually, a grayscale)
-  std::uniform_real_distribution<float> randomIntensity(0.5f, 1.0f);
-  vehicle.m_color = glm::vec4(1) * randomIntensity(re);
+  vehicle.m_polygonSides = 4;
 
   vehicle.m_color.a = 1.0f;
   vehicle.m_rotation = 0.0f;
@@ -99,9 +89,10 @@ Car::Vehicle Car::createVehicle(glm::vec2 translation, float scale) {
   if (d == 0){
     d = -1.0;
   }
+  float speedmod = rand() % 4 + 1; //velocidade aleatória para cada carro
 
   glm::vec2 direction{d, 0.0f};
-  vehicle.m_velocity = glm::normalize(direction) / 5.0f;
+  vehicle.m_velocity = glm::normalize(direction) * speedmod / 7.0f;
 
   // Create geometry
   std::array<glm::vec2, 4> positions{

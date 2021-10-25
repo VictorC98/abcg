@@ -1,32 +1,29 @@
-#ifndef FROG_HPP_
-#define FROG_HPP_
+#ifndef FINISHLINE_HPP_
+#define FINISHLINE_HPP_
 
 #include "abcg.hpp"
+#include "frog.hpp"
 #include "gamedata.hpp"
 
-class Car;
 class OpenGLWindow;
 
-class Frog {
+class FinishLine {
  public:
   void initializeGL(GLuint program);
   void paintGL(const GameData &gameData);
   void terminateGL();
+  void update(const Frog &frog, float deltaTime);
 
-  void update(const GameData &gameData, float deltaTime);
-  void setRotation(float rotation) { m_rotation = rotation; }
-  glm::vec2 m_velocity{glm::vec2(0)};
-  
  private:
-  friend Car;
   friend OpenGLWindow;
+  friend Frog;
 
   GLuint m_program{};
-  GLint m_translationLoc{};
   GLint m_colorLoc{};
   GLint m_scaleLoc{};
   GLint m_rotationLoc{};
-
+  GLint m_translationLoc{};
+  
   GLuint m_vao{};
   GLuint m_vbo{};
   GLuint m_ebo{};
@@ -34,8 +31,10 @@ class Frog {
   glm::vec4 m_color{1};
   float m_rotation{};
   float m_scale{0.125f};
+  bool m_hit{false};
   glm::vec2 m_translation{glm::vec2(0)};
-  
+  glm::vec2 m_velocity{glm::vec2(0)};
 
 };
+
 #endif

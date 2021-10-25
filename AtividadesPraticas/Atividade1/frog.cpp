@@ -42,7 +42,7 @@ void Frog::initializeGL(GLuint program) {
 
   // Normalize
   for (auto &position : positions) {
-    position /= glm::vec2{18.0f, 18.0f};
+    position /= glm::vec2{20.0f, 20.0f};
   }
 
   const std::array indices{0, 1, 17,
@@ -107,7 +107,9 @@ void Frog::paintGL(const GameData &gameData) {
   abcg::glUniform1f(m_scaleLoc, m_scale);
   abcg::glUniform1f(m_rotationLoc, m_rotation);
   abcg::glUniform2fv(m_translationLoc, 1, &m_translation.x);
-
+  m_color.g = 1.0f;
+  m_color.r = 0.0f;
+  m_color.b = 0.2f;
   abcg::glUniform4fv(m_colorLoc, 1, &m_color.r);
   abcg::glDrawElements(GL_TRIANGLES, 14 * 3, GL_UNSIGNED_INT, nullptr);
 
@@ -123,15 +125,18 @@ void Frog::terminateGL() {
 }
 
 void Frog::update(const GameData &gameData, float deltaTime) {
-  if (gameData.m_input[static_cast<size_t>(Input::Left)])
-    m_rotation = glm::wrapAngle(m_rotation + 4.0f * deltaTime);
-  if (gameData.m_input[static_cast<size_t>(Input::Right)])
-    m_rotation = glm::wrapAngle(m_rotation - 4.0f * deltaTime);
-  // Apply thrust
+  // Direções
   if (gameData.m_input[static_cast<size_t>(Input::Up)] &&
       gameData.m_state == State::Playing) {
-    // Thrust in the forward vector
-    glm::vec2 forward = glm::rotate(glm::vec2{0.0f, 1.0f}, m_rotation);
+
+    glm::vec2 forward = glm::rotate(glm::vec2{0.0f, 0.5f}, m_rotation);
     m_velocity += forward * deltaTime;
+  }
+  
+  if (gameData.m_input[static_cast<size_t>(Input::Down)]&&
+      gameData.m_state == State::Playing){
+        
+    glm::vec2 forward = glm::rotate(glm::vec2{0.0f, 0.5f}, m_rotation);
+    m_velocity = forward - forward;
   }
 }
