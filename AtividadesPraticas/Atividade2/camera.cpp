@@ -49,10 +49,10 @@ void Camera::pan(float speed) {
   computeViewMatrix();
 }
 
-void Camera::vertical(float speed) {
+void Camera::rotatex(float speed) {
   glm::mat4 transform{glm::mat4(1.0f)};
 
-  // Rotate camera vertically
+  // Rotate camera around its local x axis
   transform = glm::translate(transform, m_eye);
   transform = glm::rotate(transform, -speed, m_right);
   transform = glm::translate(transform, -m_eye);

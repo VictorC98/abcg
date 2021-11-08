@@ -1,4 +1,4 @@
-project(Room)
+project(ShootingRange)
 
 add_executable(${PROJECT_NAME} camera.cpp main.cpp openglwindow.cpp)
 

@@ -32,14 +32,15 @@ class OpenGLWindow : public abcg::OpenGLWindow {
 
   int m_viewportWidth{};
   int m_viewportHeight{};
+  int upright = 1;
 
   Camera m_camera;
   float m_dollySpeed{0.0f};
   float m_truckSpeed{0.0f};
   float m_panSpeed{0.0f};
   float m_vertSpeed{0.0f};
-  float FOV{70.0f};
-  
+  float rotateblue{0.0f};
+  float rotatered{0.0f};
 
   std::vector<Vertex> m_vertices;
   std::vector<GLuint> m_indices;

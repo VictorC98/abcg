@@ -31,12 +31,16 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
     if (ev.key.keysym.sym == SDLK_DOWN || ev.key.keysym.sym == SDLK_s)
       m_dollySpeed = -2.0f;
 
-    if (ev.key.keysym.sym == SDLK_a) m_truckSpeed = -2.0f;
-    if (ev.key.keysym.sym == SDLK_d) m_truckSpeed = 2.0f;
-    if (ev.key.keysym.sym == SDLK_ESCAPE){
-      terminateGL();
-    }
+    if (ev.key.keysym.sym == SDLK_a || ev.key.keysym.sym == SDLK_LEFT) m_truckSpeed = -2.0f;
+    if (ev.key.keysym.sym == SDLK_d || ev.key.keysym.sym == SDLK_RIGHT) m_truckSpeed = 2.0f;
+
+    if (ev.key.keysym.sym == SDLK_1) upright = 1; //modo 1
+    if (ev.key.keysym.sym == SDLK_2) upright = 2; //modo 2
+    if (ev.key.keysym.sym == SDLK_3) upright = 3; //modo 3
+    
+    if (ev.key.keysym.sym == SDLK_ESCAPE) terminateGL(); //Esc para fechar app
   }
+
   if (ev.type == SDL_KEYUP) {
     if ((ev.key.keysym.sym == SDLK_UP || ev.key.keysym.sym == SDLK_w) && m_dollySpeed > 0)
       m_dollySpeed = 0.0f;
@@ -44,26 +48,32 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
       m_dollySpeed = 0.0f;
     
     if (ev.key.keysym.sym == SDLK_a && m_truckSpeed < 0) m_truckSpeed = 0.0f;
+    if (ev.key.keysym.sym == SDLK_LEFT && m_truckSpeed < 0) m_truckSpeed = 0.0f;
     if (ev.key.keysym.sym == SDLK_d && m_truckSpeed > 0) m_truckSpeed = 0.0f;
+    if (ev.key.keysym.sym == SDLK_RIGHT && m_truckSpeed > 0) m_truckSpeed = 0.0f;
   }
 
   //movimento relativo do mouse para controle da câmera
   if (ev.type == SDL_MOUSEMOTION) {
     if (ev.motion.xrel){
-      m_panSpeed = ev.motion.xrel / 2;
+      m_panSpeed = ev.motion.xrel / 2; //dividido por 2 para menor sensitividade
     }
     if (ev.motion.yrel){
       m_vertSpeed = ev.motion.yrel / 2;
     }
   }
-
+  //Botão direito do mouse muda o FOV para efeito de zoom
   if (ev.type == SDL_MOUSEBUTTONDOWN) {
-    if(ev.button.button == SDL_BUTTON_RIGHT)
-      m_camera.m_FOV = 30.0f;
+    if(ev.button.button == SDL_BUTTON_RIGHT){
+      m_camera.m_FOV = 40.0f;
+      resizeGL(getWindowSettings().width, getWindowSettings().height);
+    }
   }
   if (ev.type == SDL_MOUSEBUTTONUP) {
-    if(ev.button.button == SDL_BUTTON_RIGHT)
+    if(ev.button.button == SDL_BUTTON_RIGHT){
       m_camera.m_FOV = 70.0f;
+      resizeGL(getWindowSettings().width, getWindowSettings().height);
+    }
   }
 }
 
@@ -201,67 +211,88 @@ void OpenGLWindow::paintGL() {
 
   abcg::glBindVertexArray(m_VAO);
 
-  // Draw red targets
+  //modo 1: vermelhos para cima e azuis deitados
+  if (upright == 1){
+    rotatered = 0.0f;
+    rotateblue = 90.0f;
+  }
+  //modo 2: azuis para cima e vermelhos deitados
+  if (upright == 2){
+    rotatered = 90.0f;
+    rotateblue = 0.0f;
+  }
+  //modo 3: todos para cima
+  if (upright == 3){
+    rotatered = 0.0f;
+    rotateblue = 0.0f;
+  }
+
+  // Alvos vermelhos
   glm::mat4 model{1.0f};
-  model = glm::translate(model, glm::vec3(-1.0f, 1.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 0.2f));
+  model = glm::rotate(model, glm::radians(rotatered), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 1.0f, 0.25f, 0.25f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.2f));
+  model = glm::rotate(model, glm::radians(rotatered), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 1.0f, 0.25f, 0.25f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(1.0f, 1.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(1.0f, 0.0f, 0.2f));
+  model = glm::rotate(model, glm::radians(rotatered), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 1.0f, 0.25f, 0.25f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
   
-  // Draw blue targets
+  
+  // Alvos Azuis
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(-1.5f, 0.0f, -0.5f));
+  model = glm::rotate(model, glm::radians(rotateblue), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 0.0f, 0.8f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
-
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+  
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(-0.5f, 0.0f, -0.5f));
+  model = glm::rotate(model, glm::radians(rotateblue), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 0.0f, 0.8f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(1.0f, 0.0f, 0.0f));
-  model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0, 1, 0));
+  model = glm::translate(model, glm::vec3(0.5f, 0.0f, -0.5f));
+  model = glm::rotate(model, glm::radians(rotateblue), glm::vec3(-1, 0, 0));
   model = glm::scale(model, glm::vec3(0.03f));
-
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 0.0f, 0.8f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(1.5f, 0.0f, -0.5f));
+  model = glm::rotate(model, glm::radians(rotateblue), glm::vec3(-1, 0, 0));
+  model = glm::scale(model, glm::vec3(0.03f));
+  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(colorLoc, 0.0f, 0.8f, 1.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+  
+  //Alvo amarelo
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(0.0f, 1.0f, -1.0f));
+  model = glm::scale(model, glm::vec3(0.02f));
+  abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 0.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
   abcg::glBindVertexArray(0);
 
@@ -293,5 +324,5 @@ void OpenGLWindow::update() {
   m_camera.dolly(m_dollySpeed * deltaTime);
   m_camera.truck(m_truckSpeed * deltaTime);
   m_camera.pan(m_panSpeed * deltaTime);
-  m_camera.vertical(m_vertSpeed * deltaTime);
+  m_camera.rotatex(m_vertSpeed * deltaTime);
 }
