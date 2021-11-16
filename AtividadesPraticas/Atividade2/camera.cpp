@@ -54,9 +54,19 @@ void Camera::rotatex(float speed) {
 
   // Rotate camera around its local x axis
   transform = glm::translate(transform, m_eye);
-  transform = glm::rotate(transform, -speed, m_right);
+  const glm::vec3 forward{glm::normalize(m_at - m_eye)};
+
+  //Rotação depende da direção que a câmera está olhando
+  if(forward.z >= 0){
+    transform = glm::rotate(transform, speed, m_right);
+  }
+  else{
+    transform = glm::rotate(transform, -speed, m_right);
+  }
+
   transform = glm::translate(transform, -m_eye);
 
+  
   m_at = transform * glm::vec4(m_at, 1.0f);
 
   computeViewMatrix();

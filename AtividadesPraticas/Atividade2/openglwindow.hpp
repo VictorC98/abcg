@@ -2,9 +2,12 @@
 #define OPENGLWINDOW_HPP_
 
 #include <vector>
+#include <imgui.h>
 
 #include "abcg.hpp"
 #include "camera.hpp"
+#include "ground.hpp"
+#include "wall.hpp"
 
 struct Vertex {
   glm::vec3 position;
@@ -41,9 +44,15 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   float m_vertSpeed{0.0f};
   float rotateblue{0.0f};
   float rotatered{0.0f};
+  float yellowpos{0.0f};
+
+  Ground m_ground;
+  Wall m_wall;
 
   std::vector<Vertex> m_vertices;
   std::vector<GLuint> m_indices;
+
+  ImFont* m_font{};
 
   void loadModelFromFile(std::string_view path);
   void update();

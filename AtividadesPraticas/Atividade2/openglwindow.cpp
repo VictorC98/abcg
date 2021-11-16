@@ -37,7 +37,12 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
     if (ev.key.keysym.sym == SDLK_1) upright = 1; //modo 1
     if (ev.key.keysym.sym == SDLK_2) upright = 2; //modo 2
     if (ev.key.keysym.sym == SDLK_3) upright = 3; //modo 3
+    if (ev.key.keysym.sym == SDLK_4) upright = 4; //modo 4
     
+    //move alvo amarelo
+    if (ev.key.keysym.sym == SDLK_q) yellowpos -= 0.2f;
+    if (ev.key.keysym.sym == SDLK_e) yellowpos += 0.2f;
+
     if (ev.key.keysym.sym == SDLK_ESCAPE) terminateGL(); //Esc para fechar app
   }
 
@@ -80,6 +85,14 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
 void OpenGLWindow::initializeGL() {
   abcg::glClearColor(0, 0, 0, 1);
 
+  // Load a new font
+  ImGuiIO &io{ImGui::GetIO()};
+  auto filename{getAssetsPath() + "Raleway.ttf"};
+  m_font = io.Fonts->AddFontFromFileTTF(filename.c_str(), 20.0f);
+  if (m_font == nullptr) {
+    throw abcg::Exception{abcg::Exception::Runtime("Cannot load font file")};
+  }
+
   // Enable depth buffering
   abcg::glEnable(GL_DEPTH_TEST);
 
@@ -87,7 +100,8 @@ void OpenGLWindow::initializeGL() {
   m_program = createProgramFromFile(getAssetsPath() + "lookat.vert",
                                     getAssetsPath() + "lookat.frag");
 
-
+  m_ground.initializeGL(m_program);
+  m_wall.initializeGL(m_program);
 
   // Load model
   loadModelFromFile(getAssetsPath() + "target.obj");
@@ -226,6 +240,11 @@ void OpenGLWindow::paintGL() {
     rotatered = 0.0f;
     rotateblue = 0.0f;
   }
+  //modo 4: todos deitados
+  if (upright == 4){
+    rotatered = 90.0f;
+    rotateblue = 90.0f;
+  }
 
   // Alvos vermelhos
   glm::mat4 model{1.0f};
@@ -288,18 +307,42 @@ void OpenGLWindow::paintGL() {
   
   //Alvo amarelo
   model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(0.0f, 1.0f, -1.0f));
+  model = glm::translate(model, glm::vec3(yellowpos, 1.0f, -1.7f));
   model = glm::scale(model, glm::vec3(0.02f));
   abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 0.0f, 1.0f);
   abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+  //Wrap-Around
+  if(yellowpos > 1.7f) yellowpos = -1.7f;
+  if(yellowpos < -1.7f) yellowpos = 1.7f;
 
   abcg::glBindVertexArray(0);
+
+  //chao e parede de fundo
+  m_ground.paintGL();
+  m_wall.paintGL();
 
   abcg::glUseProgram(0);
 }
 
-void OpenGLWindow::paintUI() { abcg::OpenGLWindow::paintUI(); }
+void OpenGLWindow::paintUI() { abcg::OpenGLWindow::paintUI(); 
+
+  const auto size{ImVec2(600, 85)};
+    const auto position{ImVec2((m_viewportWidth - size.x),
+                               (m_viewportHeight - size.y))};
+    ImGui::SetNextWindowPos(position);
+    ImGui::SetNextWindowSize(size);
+    ImGuiWindowFlags flags{ImGuiWindowFlags_NoBackground |
+                           ImGuiWindowFlags_NoTitleBar |
+                           ImGuiWindowFlags_NoInputs};
+    ImGui::Begin(" ", nullptr, flags);
+    ImGui::PushFont(m_font);
+      ImGui::Text("Mouse para olhar/wasd ou setas para mover\nnumeros para mudar posicao dos alvos\nq,e para mudar posicao do alvo amarelo\nEsc para sair");
+
+    ImGui::PopFont();
+    ImGui::End();
+
+}
 
 void OpenGLWindow::resizeGL(int width, int height) {
   m_viewportWidth = width;
@@ -309,7 +352,8 @@ void OpenGLWindow::resizeGL(int width, int height) {
 }
 
 void OpenGLWindow::terminateGL() {
-
+  m_ground.terminateGL();
+  m_wall.terminateGL();
 
   abcg::glDeleteProgram(m_program);
   abcg::glDeleteBuffers(1, &m_EBO);

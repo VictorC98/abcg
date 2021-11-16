@@ -26,9 +26,8 @@ class Camera {
   glm::vec3 m_at{glm::vec3(0.0f, 0.5f, 0.0f)};   // Look-at point
   glm::vec3 m_up{glm::vec3(0.0f, 1.0f, 0.0f)};   // "up" direction
   glm::vec3 m_right{glm::vec3(1.0f, 0.0f, 0.0f)};   // "right" direction
-  glm::vec3 m_front{glm::vec3(0.0f, 0.0f, 1.0f)};
 
-  // Matrix to change from world space to camera soace
+  // Matrix to change from world space to camera space
   glm::mat4 m_viewMatrix;
 
   // Matrix to change from camera space to clip space
