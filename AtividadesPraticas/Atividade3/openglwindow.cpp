@@ -35,8 +35,10 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
     if (ev.key.keysym.sym == SDLK_DOWN || ev.key.keysym.sym == SDLK_s)
       m_dollySpeed = -2.0f;
 
-    if (ev.key.keysym.sym == SDLK_a || ev.key.keysym.sym == SDLK_LEFT) m_truckSpeed = -2.0f;
-    if (ev.key.keysym.sym == SDLK_d || ev.key.keysym.sym == SDLK_RIGHT) m_truckSpeed = 2.0f;
+    if (ev.key.keysym.sym == SDLK_a || ev.key.keysym.sym == SDLK_LEFT)
+      m_truckSpeed = -2.0f;
+    if (ev.key.keysym.sym == SDLK_d || ev.key.keysym.sym == SDLK_RIGHT)
+      m_truckSpeed = 2.0f;
 
     if (ev.key.keysym.sym == SDLK_1) upright = 1; //modo 1
     if (ev.key.keysym.sym == SDLK_2) upright = 2; //modo 2
@@ -44,10 +46,15 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
     if (ev.key.keysym.sym == SDLK_4) upright = 4; //modo 4
     
     //move alvo amarelo
-    if (ev.key.keysym.sym == SDLK_q) smallpos -= 0.2f;
-    if (ev.key.keysym.sym == SDLK_e) smallpos += 0.2f;
+    if (ev.key.keysym.sym == SDLK_q)
+      smallpos -= 0.2f;
+    if (ev.key.keysym.sym == SDLK_e)
+      smallpos += 0.2f;
 
-    if (ev.key.keysym.sym == SDLK_ESCAPE) terminateGL(); //Esc para fechar app
+    if (ev.key.keysym.sym == SDLK_ESCAPE){
+      SDL_SetRelativeMouseMode(SDL_TRUE);
+      terminateGL();
+    }
   }
 
   if (ev.type == SDL_KEYUP) {
@@ -101,8 +108,8 @@ void OpenGLWindow::initializeGL() {
   abcg::glEnable(GL_DEPTH_TEST);
 
   // Create program
-  m_program = createProgramFromFile(getAssetsPath() + "lookat.vert",
-                                    getAssetsPath() + "lookat.frag");
+  m_program = createProgramFromFile(getAssetsPath() + "texture.vert",
+                                    getAssetsPath() + "texture.frag");
 
   m_ground.initializeGL(m_program);
   m_wall.initializeGL(m_program);
@@ -470,14 +477,15 @@ void OpenGLWindow::paintGL() {
 
 void OpenGLWindow::paintUI() { abcg::OpenGLWindow::paintUI(); 
 
-  const auto size{ImVec2(600, 85)};
+  const auto size{ImVec2(800, 90)};
     const auto position{ImVec2((m_viewportWidth - size.x),
                                (m_viewportHeight - size.y))};
     ImGui::SetNextWindowPos(position);
     ImGui::SetNextWindowSize(size);
     ImGuiWindowFlags flags{ImGuiWindowFlags_NoBackground |
                            ImGuiWindowFlags_NoTitleBar |
-                           ImGuiWindowFlags_NoInputs};
+                           ImGuiWindowFlags_NoInputs |
+                           ImGuiWindowFlags_NoScrollbar};
     ImGui::Begin(" ", nullptr, flags);
     ImGui::PushFont(m_font);
       ImGui::Text("Mouse para olhar/wasd ou setas para mover\nnumeros para mudar posicao dos alvos\nq,e para mudar posicao do alvo pequeno\nEsc para sair");
