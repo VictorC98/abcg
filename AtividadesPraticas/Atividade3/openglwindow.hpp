@@ -75,6 +75,11 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   glm::vec4 m_Ks;
   float m_shininess;
   GLuint m_diffuseTexture{};
+  GLuint m_cubeTexture{};
+  const std::string m_skyShaderName{"skybox"};
+  GLuint m_skyVAO{};
+  GLuint m_skyVBO{};
+  GLuint m_skyProgram{};
 
   bool m_hasNormals{false};
   bool m_hasTexCoords{false};
@@ -89,12 +94,39 @@ class OpenGLWindow : public abcg::OpenGLWindow {
   [[nodiscard]] float getShininess() const { return m_shininess; }
 
   [[nodiscard]] bool isUVMapped() const { return m_hasTexCoords; }
+  [[nodiscard]] GLuint getCubeTexture() const { return m_cubeTexture; }
 
   void computeNormals();
   void loadModelFromFile(std::string_view path);
   void update();
   void loadDiffuseTexture(std::string_view path);
+  void loadCubeTexture(const std::string& path);
   void render(int numTriangles = -1) const;
+  void initializeSkybox();
+  void terminateSkybox();
+  void renderSkybox();
+
+  //Cube
+  const std::array<glm::vec3, 36>  m_skyPositions{
+    // Front
+    glm::vec3{-10, -10, +10}, glm::vec3{+10, -10, +10}, glm::vec3{+10, +10, +10},
+    glm::vec3{-10, -10, +10}, glm::vec3{+10, +10, +10}, glm::vec3{-10, +10, +10},
+    // Back
+    glm::vec3{+10, -10, -10}, glm::vec3{-10, -10, -10}, glm::vec3{-10, +10, -10},
+    glm::vec3{+10, -10, -10}, glm::vec3{-10, +10, -10}, glm::vec3{+10, +10, -10},
+    // Right
+    glm::vec3{+10, -10, -10}, glm::vec3{+10, +10, -10}, glm::vec3{+10, +10, +10},
+    glm::vec3{+10, -10, -10}, glm::vec3{+10, +10, +10}, glm::vec3{+10, -10, +10},
+    // Left
+    glm::vec3{-10, -10, +10}, glm::vec3{-10, +10, +10}, glm::vec3{-10, +10, -10},
+    glm::vec3{-10, -10, +10}, glm::vec3{-10, +10, -10}, glm::vec3{-10, -10, -10},
+    // Top
+    glm::vec3{-10, +10, +10}, glm::vec3{+10, +10, +10}, glm::vec3{+10, +10, -10},
+    glm::vec3{-10, +10, +10}, glm::vec3{+10, +10, -10}, glm::vec3{-10, +10, -10},
+    // Bottom
+    glm::vec3{-10, -10, -10}, glm::vec3{+10, -10, -10}, glm::vec3{+10, -10, +10},
+    glm::vec3{-10, -10, -10}, glm::vec3{+10, -10, +10}, glm::vec3{-10, -10, +10}
+  };
 };
 
 #endif

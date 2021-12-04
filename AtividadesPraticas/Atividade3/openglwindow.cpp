@@ -52,7 +52,6 @@ void OpenGLWindow::handleEvent(SDL_Event& ev) {
       smallpos += 0.2f;
 
     if (ev.key.keysym.sym == SDLK_ESCAPE){
-      SDL_SetRelativeMouseMode(SDL_TRUE);
       terminateGL();
     }
   }
@@ -113,9 +112,12 @@ void OpenGLWindow::initializeGL() {
 
   m_ground.initializeGL(m_program);
   m_wall.initializeGL(m_program);
+  initializeSkybox();
 
   // Load model
   loadModelFromFile(getAssetsPath() + "target.obj");
+  //load cube
+  loadCubeTexture(getAssetsPath() + "cube/");
 
   // Generate VBO
   abcg::glGenBuffers(1, &m_VBO);
@@ -183,11 +185,24 @@ void OpenGLWindow::loadDiffuseTexture(std::string_view path) {
   m_diffuseTexture = abcg::opengl::loadTexture(path);
 }
 
+void OpenGLWindow::loadCubeTexture(const std::string& path) {
+  if (!std::filesystem::exists(path)) return;
+
+  abcg::glDeleteTextures(1, &m_cubeTexture);
+  m_cubeTexture = abcg::opengl::loadCubemap(
+      {path + "Cement.jpg", path + "Cement.jpg", path + "Cement.jpg",
+       path + "Cement.jpg", path + "Cement.jpg", path + "Cement.jpg"});
+}
+
 void OpenGLWindow::render(int numTriangles) const {
   abcg::glBindVertexArray(m_VAO);
 
   abcg::glActiveTexture(GL_TEXTURE0);
   abcg::glBindTexture(GL_TEXTURE_2D, m_diffuseTexture);
+
+  abcg::glActiveTexture(GL_TEXTURE2);
+  abcg::glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubeTexture);
+
 
   // Set minification and magnification parameters
   abcg::glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -343,6 +358,7 @@ void OpenGLWindow::paintGL() {
   const GLint KsLoc{abcg::glGetUniformLocation(m_program, "Ks")};
   const GLint diffuseTexLoc{abcg::glGetUniformLocation(m_program, "diffuseTex")};
   const GLint mappingModeLoc{abcg::glGetUniformLocation(m_program, "mappingMode")};
+  const GLint cubeTexLoc{abcg::glGetUniformLocation(m_program, "cubeTex")};
   
 
   // Set uniform variables for viewMatrix and projMatrix
@@ -354,6 +370,7 @@ void OpenGLWindow::paintGL() {
 
   abcg::glUniform1i(diffuseTexLoc, 0);
   abcg::glUniform1i(mappingModeLoc, m_mappingMode);
+  abcg::glUniform1i(cubeTexLoc, 2);
 
   const auto lightDirRotated{m_lightDir};
   abcg::glUniform4fv(lightDirLoc, 1, &lightDirRotated.x);
@@ -373,6 +390,8 @@ void OpenGLWindow::paintGL() {
   render(m_trianglesToDraw);
 
   abcg::glBindVertexArray(m_VAO);
+
+  abcg::glFrontFace(GL_CCW);
 
   //modo 1: vermelhos para cima e azuis deitados
   if (upright == 1){
@@ -473,6 +492,8 @@ void OpenGLWindow::paintGL() {
   m_wall.paintGL();
 
   abcg::glUseProgram(0);
+
+  renderSkybox();
 }
 
 void OpenGLWindow::paintUI() { abcg::OpenGLWindow::paintUI(); 
@@ -505,6 +526,7 @@ void OpenGLWindow::resizeGL(int width, int height) {
 void OpenGLWindow::terminateGL() {
   m_ground.terminateGL();
   m_wall.terminateGL();
+  terminateSkybox();
 
   abcg::glDeleteProgram(m_program);
   abcg::glDeleteBuffers(1, &m_EBO);
@@ -552,4 +574,73 @@ void OpenGLWindow::computeNormals() {
   }
 
   m_hasNormals = true;
+}
+
+void OpenGLWindow::initializeSkybox() {
+  // Create skybox program
+  const auto path{getAssetsPath() +  m_skyShaderName};
+  m_skyProgram = createProgramFromFile(path + ".vert", path + ".frag");
+
+  // Generate VBO
+  abcg::glGenBuffers(1, &m_skyVBO);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glBufferData(GL_ARRAY_BUFFER, sizeof(m_skyPositions),
+                     m_skyPositions.data(), GL_STATIC_DRAW);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // Get location of attributes in the program
+  const GLint positionAttribute{
+      abcg::glGetAttribLocation(m_skyProgram, "inPosition")};
+
+  // Create VAO
+  abcg::glGenVertexArrays(1, &m_skyVAO);
+
+  // Bind vertex attributes to current VAO
+  abcg::glBindVertexArray(m_skyVAO);
+
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glEnableVertexAttribArray(positionAttribute);
+  abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0,
+                              nullptr);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // End of binding to current VAO
+  abcg::glBindVertexArray(0);
+}
+
+void OpenGLWindow::renderSkybox() {
+  abcg::glUseProgram(m_skyProgram);
+
+  // Get location of uniform variables
+  const GLint viewMatrixLoc{
+      abcg::glGetUniformLocation(m_skyProgram, "viewMatrix")};
+  const GLint projMatrixLoc{
+      abcg::glGetUniformLocation(m_skyProgram, "projMatrix")};
+  const GLint skyTexLoc{abcg::glGetUniformLocation(m_skyProgram, "skyTex")};
+
+  // Set uniform variables
+  const auto viewMatrix{m_camera.m_projMatrix};
+  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_camera.m_viewMatrix[0][0]);
+  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_camera.m_projMatrix[0][0]);
+  abcg::glUniform1i(skyTexLoc, 0);
+
+  abcg::glBindVertexArray(m_skyVAO);
+
+  abcg::glActiveTexture(GL_TEXTURE0);
+  abcg::glBindTexture(GL_TEXTURE_CUBE_MAP, getCubeTexture());
+
+  abcg::glEnable(GL_CULL_FACE);
+  abcg::glFrontFace(GL_CW);
+  abcg::glDepthFunc(GL_LEQUAL);
+  abcg::glDrawArrays(GL_TRIANGLES, 0, m_skyPositions.size());
+  abcg::glDepthFunc(GL_LESS);
+
+  abcg::glBindVertexArray(0);
+  abcg::glUseProgram(0);
+}
+
+void OpenGLWindow::terminateSkybox() {
+  abcg::glDeleteProgram(m_skyProgram);
+  abcg::glDeleteBuffers(1, &m_skyVBO);
+  abcg::glDeleteVertexArrays(1, &m_skyVAO);
 }

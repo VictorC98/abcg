@@ -4,10 +4,10 @@
 
 void Wall::initializeGL(GLuint program) {
   // clang-format off
-  std::array vertices{glm::vec3(-2.0f, 2.0f, -2.0f), 
-                      glm::vec3( 2.0f, 2.0f, -2.0f),
-                      glm::vec3(-2.0f, 0.0f, -2.0f),
-                      glm::vec3( 2.0f, 0.0f, -2.0f)};
+  std::array vertices{glm::vec3(-2.0f, 0.0f, -2.0f),
+                      glm::vec3( 2.0f, 0.0f, -2.0f),
+                      glm::vec3(-2.0f, 2.0f, -2.0f), 
+                      glm::vec3( 2.0f, 2.0f, -2.0f)};
   // clang-format on                      
 
   // Generate VBO
